@@ -1,4 +1,4 @@
-#include "core/application.hpp"
+#include "application.hpp"
 #include "broker/registry.hpp"
 #include <filesystem>
 #include <fstream>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/money.hpp"
+#include "money.hpp"
 #include <string>
 #include <optional>
 #include <chrono>

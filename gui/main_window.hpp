@@ -1,11 +1,11 @@
 #pragma once
 
 #include "core/application.hpp"
-#include "gui/widgets/portfolio_widget.hpp"
-#include "gui/widgets/market_data_widget.hpp"
-#include "gui/widgets/strategy_widget.hpp"
-#include "gui/widgets/risk_widget.hpp"
-#include "gui/widgets/order_entry_widget.hpp"
+#include "widgets/portfolio.hpp"
+#include "widgets/market_data.hpp"
+#include "widgets/strategy.hpp"
+#include "widgets/risk.hpp"
+#include "widgets/order_entry.hpp"
 #include <QMainWindow>
 #include <QTabWidget>
 #include <QMenuBar>

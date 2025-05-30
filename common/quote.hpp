@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/greeks.hpp"
+#include "greeks.hpp"
 #include <string>
 #include <optional>
 #include <chrono>

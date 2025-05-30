@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/instrument.hpp"
+#include "instrument.hpp"
 #include <string>
 #include <vector>
 #include <optional>
