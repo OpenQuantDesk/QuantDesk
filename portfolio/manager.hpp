@@ -2,6 +2,7 @@
 
 #include "common/types.hpp"
 #include "math/engine.hpp"
+#include "math/metrics/probability.hpp"
 #include <map>
 #include <vector>
 #include <memory>
@@ -10,6 +11,7 @@
 #include <functional>
 #include <future>
 #include <thread>
+#include <chrono>
 
 namespace portfolio {
 
@@ -48,6 +50,9 @@ struct EnhancedPosition {
     double getImpliedProbability() const;
     double getMoneyness() const;
     bool isExpiring(int days = 7) const;
+    
+private:
+    std::chrono::system_clock::time_point parseExpirationDate(const std::string& expiration) const;
 };
 
 struct PortfolioMetrics {
@@ -200,6 +205,7 @@ private:
     void updateTotalValues();
     double calculateConcentrationRisk() const;
     double calculateLeverageRatio() const;
+    double calculatePositionRisk(const EnhancedPosition& position) const;
 };
 
 class RiskManager {
@@ -254,96 +260,6 @@ private:
     
     void notifyRiskAlert(const RiskAssessment& assessment);
     bool isViolation(const std::string& metric, double value, double limit) const;
-};
-
-class PositionSizer {
-private:
-    std::shared_ptr<PortfolioManager> portfolio_;
-    std::shared_ptr<math::MathEngine> mathEngine_;
-    
-public:
-    PositionSizer(std::shared_ptr<PortfolioManager> portfolio,
-                 std::shared_ptr<math::MathEngine> engine);
-    
-    struct SizingParams {
-        double maxRiskPerTrade = 0.02;
-        double maxPortfolioRisk = 0.1;
-        double confidenceLevel = 0.95;
-        bool useKelly = true;
-        bool adjustForCorrelation = true;
-        double leverageLimit = 2.0;
-    };
-    
-    struct SizingResult {
-        double optimalSize = 0.0;
-        double maxSize = 0.0;
-        double kellySize = 0.0;
-        double riskAdjustedSize = 0.0;
-        double expectedReturn = 0.0;
-        double expectedRisk = 0.0;
-        std::string reasoning;
-    };
-    
-    std::future<SizingResult> calculateOptimalSize(
-        const common::OrderRequest& order,
-        const SizingParams& params = {}) const;
-    
-    std::future<std::map<std::string, double>> optimizePortfolioWeights(
-        const std::vector<std::string>& symbols,
-        const SizingParams& params = {}) const;
-    
-private:
-    double calculateKellySize(double winRate, double avgWin, double avgLoss) const;
-    double calculateRiskAdjustedSize(const common::OrderRequest& order, 
-                                   const SizingParams& params) const;
-    double calculateCorrelationAdjustment(const std::string& symbol) const;
-};
-
-class PerformanceAnalyzer {
-private:
-    std::shared_ptr<PortfolioManager> portfolio_;
-    std::shared_ptr<math::MathEngine> mathEngine_;
-    
-public:
-    PerformanceAnalyzer(std::shared_ptr<PortfolioManager> portfolio,
-                       std::shared_ptr<math::MathEngine> engine);
-    
-    struct PerformanceMetrics {
-        double totalReturn = 0.0;
-        double annualizedReturn = 0.0;
-        double volatility = 0.0;
-        double sharpeRatio = 0.0;
-        double calmarRatio = 0.0;
-        double sortinoRatio = 0.0;
-        double maxDrawdown = 0.0;
-        double winRate = 0.0;
-        double profitFactor = 0.0;
-        double avgWin = 0.0;
-        double avgLoss = 0.0;
-        double largestWin = 0.0;
-        double largestLoss = 0.0;
-        int numTrades = 0;
-        double recoveryFactor = 0.0;
-        std::map<std::string, double> monthlyReturns;
-        std::vector<double> dailyReturns;
-    };
-    
-    std::future<PerformanceMetrics> calculatePerformance(
-        const std::chrono::system_clock::time_point& start,
-        const std::chrono::system_clock::time_point& end) const;
-    
-    std::future<std::map<std::string, PerformanceMetrics>> calculateStrategyPerformance() const;
-    std::future<std::map<std::string, double>> calculateAttribution() const;
-    
-    std::future<double> calculateInformationRatio(const std::string& benchmark = "SPY") const;
-    std::future<double> calculateTrackingError(const std::string& benchmark = "SPY") const;
-    std::future<double> calculateBeta(const std::string& benchmark = "SPY") const;
-    std::future<double> calculateAlpha(const std::string& benchmark = "SPY") const;
-    
-private:
-    std::vector<double> getReturns(const std::chrono::system_clock::time_point& start,
-                                  const std::chrono::system_clock::time_point& end) const;
-    double calculateDrawdown(const std::vector<double>& values) const;
 };
 
 }

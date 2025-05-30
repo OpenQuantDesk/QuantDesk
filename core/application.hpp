@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common/types.hpp"
-#include "broker/registry.hpp"
+#include "broker/interface.hpp"
 #include "math/engine.hpp"
 #include "data/economic.hpp"
 #include "portfolio/manager.hpp"
@@ -12,6 +12,8 @@
 #include <vector>
 #include <map>
 #include <functional>
+#include <shared_mutex>
+#include <chrono>
 
 namespace core {
 
@@ -23,6 +25,19 @@ struct ApplicationConfig {
     bool enableBackgroundAnalysis = true;
     bool enableRiskManagement = true;
     std::string configFile = "config.json";
+    
+    struct PerformanceConfig {
+        bool enableHardwareOptimization = true;
+        size_t maxThreads = 0;
+        bool enableCaching = true;
+        size_t cacheSize = 1000;
+    } performance;
+    
+    struct LoggingConfig {
+        bool enableDebugLogging = false;
+        std::string logLevel = "INFO";
+        std::string logFile = "application.log";
+    } logging;
 };
 
 class Application {
@@ -49,6 +64,9 @@ private:
     std::vector<std::function<void(const std::map<std::string, common::Quote>&)>> quoteCallbacks_;
     std::vector<std::function<void(const std::vector<strategy::StrategyOpportunity>&)>> opportunityCallbacks_;
     std::vector<std::function<void(const std::string&)>> statusCallbacks_;
+    
+    std::atomic<std::chrono::system_clock::time_point> lastDataUpdate_;
+    std::atomic<std::chrono::system_clock::time_point> lastAnalysisUpdate_;
     
 public:
     Application();
@@ -88,6 +106,16 @@ public:
     void removeSymbol(const std::string& symbol);
     std::vector<std::string> getWatchedSymbols() const;
     
+    struct SystemMetrics {
+        double cpuUsage = 0.0;
+        double memoryUsage = 0.0;
+        size_t threadCount = 0;
+        std::chrono::system_clock::time_point lastUpdate;
+        std::map<std::string, double> componentTiming;
+    };
+    
+    SystemMetrics getSystemMetrics() const;
+    
 private:
     void initializeComponents();
     void loadConfiguration();
@@ -101,6 +129,7 @@ private:
     void dataCollectionLoop();
     void analysisLoop();
     void riskMonitoringLoop();
+    void systemMonitoringLoop();
     
     void updateQuotes();
     void updateOptionChains();
@@ -115,6 +144,9 @@ private:
     ApplicationConfig loadDefaultConfig() const;
     std::vector<std::string> loadWatchlistFromFile(const std::string& filename) const;
     void saveWatchlistToFile(const std::string& filename) const;
+    
+    void optimizePerformance();
+    void setupLogging();
 };
 
 class ConfigManager {
@@ -126,6 +158,23 @@ public:
 private:
     static common::BrokerConfig parseBrokerConfig(const std::map<std::string, std::string>& params);
     static std::map<std::string, std::string> parseEconomicDataConfig(const std::map<std::string, std::string>& params);
+};
+
+class PerformanceMonitor {
+private:
+    std::atomic<double> cpuUsage_{0.0};
+    std::atomic<double> memoryUsage_{0.0};
+    std::map<std::string, std::chrono::high_resolution_clock::time_point> timingPoints_;
+    mutable std::shared_mutex timingLock_;
+    
+public:
+    void startTiming(const std::string& component);
+    void endTiming(const std::string& component);
+    double getComponentTiming(const std::string& component) const;
+    
+    void updateSystemMetrics();
+    double getCpuUsage() const { return cpuUsage_.load(); }
+    double getMemoryUsage() const { return memoryUsage_.load(); }
 };
 
 }
