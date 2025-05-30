@@ -1,6 +1,6 @@
 #pragma once
 
-#include "broker/interface.hpp"
+#include "interfaces/broker.hpp"
 #include <map>
 #include <memory>
 #include <string>

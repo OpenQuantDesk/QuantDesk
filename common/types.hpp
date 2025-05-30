@@ -5,6 +5,7 @@
 #include <optional>
 #include <chrono>
 #include <map>
+#include <atomic>
 
 namespace common {
 
@@ -35,17 +36,9 @@ struct Money {
     Money() = default;
     Money(double amt, const std::string& curr = "USD") : amount(amt), currency(curr) {}
     
-    Money operator+(const Money& other) const {
-        return Money(amount + other.amount, currency);
-    }
-    
-    Money operator-(const Money& other) const {
-        return Money(amount - other.amount, currency);
-    }
-    
-    Money operator*(double multiplier) const {
-        return Money(amount * multiplier, currency);
-    }
+    Money operator+(const Money& other) const;
+    Money operator-(const Money& other) const;
+    Money operator*(double multiplier) const;
 };
 
 struct Greeks {
@@ -56,6 +49,26 @@ struct Greeks {
     double rho = 0.0;
     double impliedVol = 0.0;
     double price = 0.0;
+};
+
+struct ExtendedGreeks {
+    double price = 0.0;
+    double delta = 0.0;
+    double gamma = 0.0;
+    double theta = 0.0;
+    double vega = 0.0;
+    double rho = 0.0;
+    
+    double volga = 0.0;
+    double vanna = 0.0;
+    double charm = 0.0;
+    double speed = 0.0;
+    double zomma = 0.0;
+    double color = 0.0;
+    
+    double dollarDelta = 0.0;
+    double dollarGamma = 0.0;
+    double pinRisk = 0.0;
 };
 
 struct Instrument {
