@@ -1,5 +1,8 @@
 #pragma once
 
+#include "curves/yield_curve.hpp"
+#include "pricing/enhanced_bs.hpp"
+
 #include "types.hpp"
 #include "memory.hpp"
 #include "threading.hpp"
@@ -15,6 +18,8 @@ private:
     std::unique_ptr<MemoryPool> memoryPool_;
     std::unique_ptr<GlobalThreadPool> threadPool_;
     ThreadLocalStorage<std::mt19937> rngStorage_;
+    std::shared_ptr<curves::YieldCurve> domesticCurve_;
+    std::shared_ptr<pricing::EnhancedBlackScholesEngine> enhancedBsEngine_;
     
 public:
     MathEngine();
@@ -61,6 +66,24 @@ public:
     const HardwareInfo& getHardwareInfo() const { return hardware_; }
     
     std::mt19937& getRNG() { return rngStorage_.get(); }
+        void setYieldCurve(std::shared_ptr<curves::YieldCurve> curve) {
+        domesticCurve_ = curve;
+        if (!enhancedBsEngine_) {
+            enhancedBsEngine_ = std::make_shared<pricing::EnhancedBlackScholesEngine>(coreEngine_);
+        }
+        enhancedBsEngine_->setDomesticCurve(curve);
+    }
+    
+    std::shared_ptr<curves::YieldCurve> getYieldCurve() const { return domesticCurve_; }
+    std::shared_ptr<pricing::EnhancedBlackScholesEngine> getEnhancedPricingEngine() const { return enhancedBsEngine_; }
+    
+    core::Greeks blackScholesWithCurve(const pricing::EnhancedBlackScholesEngine::CurveMarketData& market) const {
+        if (enhancedBsEngine_) {
+            return enhancedBsEngine_->price(market);
+        }
+        return blackScholes(core::MarketData{market.spot, market.strike, market.timeToExpiry, 0.05, market.volatility, 0.0, market.isCall});
+    }
+    
     
 private:
     void detectHardware();
