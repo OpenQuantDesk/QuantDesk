@@ -1,11 +1,31 @@
+/*
+ * Filename: main_window.hpp
+ * Developer: Benjamin Cance
+ * Date: 5/31/2025
+ * 
+ * Copyright 2025 Open Quant Desk, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #pragma once
 
 #include "core/application.hpp"
-#include "gui/widgets/portfolio_widget.hpp"
-#include "gui/widgets/market_data_widget.hpp"
-#include "gui/widgets/strategy_widget.hpp"
-#include "gui/widgets/risk_widget.hpp"
-#include "gui/widgets/order_entry_widget.hpp"
+#include "widgets/portfolio.hpp"
+#include "widgets/market_data.hpp"
+#include "widgets/strategy.hpp"
+#include "widgets/risk.hpp"
+#include "widgets/order_entry.hpp"
 #include <QMainWindow>
 #include <QTabWidget>
 #include <QMenuBar>

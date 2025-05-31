@@ -1,131 +1,235 @@
+/*
+ * Filename: application.hpp
+ * Developer: Benjamin Cance
+ * Date: 5/31/2025
+ * 
+ * Copyright 2025 Open Quant Desk, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #pragma once
 
 #include "common/types.hpp"
-#include "broker/registry.hpp"
-#include "math/engine.hpp"
-#include "data/economic.hpp"
+#include "data/economic/interestRates.hpp"
+#include "data/economic/sentiment.hpp"
+#include "interfaces/broker.hpp"
+// #include "OptionsQuantLib/core/engine.hpp"  // Temporarily disabled
 #include "portfolio/manager.hpp"
-#include "strategy/engine.hpp"
-#include <memory>
+#include "strategy/strategy_engine.hpp"
 #include <atomic>
+#include <chrono>
+#include <functional>
+#include <map>
+#include <memory>
+#include <shared_mutex>
 #include <thread>
 #include <vector>
-#include <map>
-#include <functional>
 
 namespace core {
 
-struct ApplicationConfig {
-    std::vector<common::BrokerConfig> brokers;
-    std::map<std::string, std::string> economicDataKeys;
-    std::vector<std::string> watchedSymbols = {"SPY", "QQQ", "IWM"};
-    int updateIntervalSeconds = 10;
-    bool enableBackgroundAnalysis = true;
-    bool enableRiskManagement = true;
-    std::string configFile = "config.json";
-};
+    struct ApplicationConfig {
+        std::vector<common::BrokerConfig> brokers;
+        std::map<std::string, std::string> economicDataKeys;
+        std::vector<std::string> watchedSymbols = {"SPY", "QQQ", "IWM"};
+        int updateIntervalSeconds = 10;
+        bool enableBackgroundAnalysis = true;
+        bool enableRiskManagement = true;
+        std::string configFile = "config.json";
 
-class Application {
-private:
-    ApplicationConfig config_;
-    
-    std::shared_ptr<math::MathEngine> mathEngine_;
-    std::shared_ptr<data::EconomicDataManager> economicData_;
-    std::shared_ptr<portfolio::PortfolioManager> portfolio_;
-    std::shared_ptr<portfolio::RiskManager> riskManager_;
-    std::shared_ptr<strategy::StrategyEngine> strategyEngine_;
-    std::unique_ptr<broker::BrokerManager> brokerManager_;
-    std::unique_ptr<broker::PluginLoader> pluginLoader_;
-    
-    std::atomic<bool> running_{false};
-    std::vector<std::thread> threads_;
-    
-    std::map<std::string, common::Quote> currentQuotes_;
-    std::map<std::string, common::OptionChain> currentOptionChains_;
-    std::vector<strategy::StrategyOpportunity> currentOpportunities_;
-    
-    mutable std::shared_mutex dataLock_;
-    
-    std::vector<std::function<void(const std::map<std::string, common::Quote>&)>> quoteCallbacks_;
-    std::vector<std::function<void(const std::vector<strategy::StrategyOpportunity>&)>> opportunityCallbacks_;
-    std::vector<std::function<void(const std::string&)>> statusCallbacks_;
-    
-public:
-    Application();
-    ~Application();
-    
-    Application(const Application&) = delete;
-    Application& operator=(const Application&) = delete;
-    
-    void initialize();
-    void initialize(const ApplicationConfig& config);
-    void run();
-    void shutdown();
-    
-    bool isRunning() const { return running_; }
-    
-    std::shared_ptr<math::MathEngine> getMathEngine() const { return mathEngine_; }
-    std::shared_ptr<data::EconomicDataManager> getEconomicData() const { return economicData_; }
-    std::shared_ptr<portfolio::PortfolioManager> getPortfolio() const { return portfolio_; }
-    std::shared_ptr<portfolio::RiskManager> getRiskManager() const { return riskManager_; }
-    std::shared_ptr<strategy::StrategyEngine> getStrategyEngine() const { return strategyEngine_; }
-    broker::BrokerManager* getBrokerManager() const { return brokerManager_.get(); }
-    
-    std::map<std::string, common::Quote> getCurrentQuotes() const;
-    std::map<std::string, common::OptionChain> getCurrentOptionChains() const;
-    std::vector<strategy::StrategyOpportunity> getCurrentOpportunities() const;
-    
-    void addQuoteCallback(std::function<void(const std::map<std::string, common::Quote>&)> callback);
-    void addOpportunityCallback(std::function<void(const std::vector<strategy::StrategyOpportunity>&)> callback);
-    void addStatusCallback(std::function<void(const std::string&)> callback);
-    
-    std::future<broker::Result<common::OrderResponse>> placeOrder(const common::OrderRequest& request);
-    std::future<broker::Result<common::OrderResponse>> cancelOrder(const std::string& accountId, 
-                                                                  const std::string& orderId);
-    
-    void reloadWatchlist();
-    void addSymbol(const std::string& symbol);
-    void removeSymbol(const std::string& symbol);
-    std::vector<std::string> getWatchedSymbols() const;
-    
-private:
-    void initializeComponents();
-    void loadConfiguration();
-    void saveConfiguration() const;
-    void loadPlugins();
-    void initializeBrokers();
-    
-    void startBackgroundThreads();
-    void stopBackgroundThreads();
-    
-    void dataCollectionLoop();
-    void analysisLoop();
-    void riskMonitoringLoop();
-    
-    void updateQuotes();
-    void updateOptionChains();
-    void updatePortfolioAnalytics();
-    void runStrategyAnalysis();
-    void performRiskCheck();
-    
-    void notifyQuoteUpdate(const std::map<std::string, common::Quote>& quotes);
-    void notifyOpportunityUpdate(const std::vector<strategy::StrategyOpportunity>& opportunities);
-    void notifyStatusUpdate(const std::string& status);
-    
-    ApplicationConfig loadDefaultConfig() const;
-    std::vector<std::string> loadWatchlistFromFile(const std::string& filename) const;
-    void saveWatchlistToFile(const std::string& filename) const;
-};
+        struct PerformanceConfig {
+            bool enableHardwareOptimization = true;
+            size_t maxThreads = 0;
+            bool enableCaching = true;
+            size_t cacheSize = 1000;
+        } performance;
 
-class ConfigManager {
-public:
-    static ApplicationConfig loadFromFile(const std::string& filename);
-    static void saveToFile(const ApplicationConfig& config, const std::string& filename);
-    static ApplicationConfig loadFromEnvironment();
-    
-private:
-    static common::BrokerConfig parseBrokerConfig(const std::map<std::string, std::string>& params);
-    static std::map<std::string, std::string> parseEconomicDataConfig(const std::map<std::string, std::string>& params);
-};
+        struct LoggingConfig {
+            bool enableDebugLogging = false;
+            std::string logLevel = "INFO";
+            std::string logFile = "application.log";
+        } logging;
+    };
 
-}
+    class Application {
+    private:
+        ApplicationConfig config_;
+
+        std::shared_ptr<math::core::MathEngine> mathEngine_;
+        std::shared_ptr<data::EconomicDataManager> economicData_;
+        std::shared_ptr<portfolio::PortfolioManager> portfolio_;
+        std::shared_ptr<portfolio::RiskManager> riskManager_;
+        std::shared_ptr<strategy::StrategyEngine> strategyEngine_;
+        std::unique_ptr<broker::BrokerManager> brokerManager_;
+        std::unique_ptr<broker::PluginLoader> pluginLoader_;
+
+        std::atomic<bool> running_{false};
+        std::vector<std::thread> threads_;
+
+        std::map<std::string, common::Quote> currentQuotes_;
+        std::map<std::string, common::OptionChain> currentOptionChains_;
+        std::vector<strategy::StrategyOpportunity> currentOpportunities_;
+
+        mutable std::shared_mutex dataLock_;
+
+        std::vector<
+            std::function<void(const std::map<std::string, common::Quote>&)>>
+            quoteCallbacks_;
+        std::vector<std::function<void(
+            const std::vector<strategy::StrategyOpportunity>&)>>
+            opportunityCallbacks_;
+        std::vector<std::function<void(const std::string&)>> statusCallbacks_;
+
+        std::atomic<std::chrono::system_clock::time_point> lastDataUpdate_;
+        std::atomic<std::chrono::system_clock::time_point> lastAnalysisUpdate_;
+    public:
+        Application();
+        ~Application();
+
+        Application(const Application&) = delete;
+        Application& operator=(const Application&) = delete;
+
+        void initialize();
+        void initialize(const ApplicationConfig& config);
+        void run();
+        void shutdown();
+
+        bool isRunning() const { return running_; }
+
+        std::shared_ptr<math::core::MathEngine> getMathEngine() const
+        {
+            return mathEngine_;
+        }
+        std::shared_ptr<data::EconomicDataManager> getEconomicData() const
+        {
+            return economicData_;
+        }
+        std::shared_ptr<portfolio::PortfolioManager> getPortfolio() const
+        {
+            return portfolio_;
+        }
+        std::shared_ptr<portfolio::RiskManager> getRiskManager() const
+        {
+            return riskManager_;
+        }
+        std::shared_ptr<strategy::StrategyEngine> getStrategyEngine() const
+        {
+            return strategyEngine_;
+        }
+        broker::BrokerManager* getBrokerManager() const
+        {
+            return brokerManager_.get();
+        }
+
+        std::map<std::string, common::Quote> getCurrentQuotes() const;
+        std::map<std::string, common::OptionChain>
+        getCurrentOptionChains() const;
+        std::vector<strategy::StrategyOpportunity>
+        getCurrentOpportunities() const;
+
+        void addQuoteCallback(
+            std::function<void(const std::map<std::string, common::Quote>&)>
+                callback);
+        void addOpportunityCallback(
+            std::function<
+                void(const std::vector<strategy::StrategyOpportunity>&)>
+                callback);
+        void
+        addStatusCallback(std::function<void(const std::string&)> callback);
+
+        std::future<broker::Result<common::OrderResponse>>
+        placeOrder(const common::OrderRequest& request);
+        std::future<broker::Result<common::OrderResponse>>
+        cancelOrder(const std::string& accountId, const std::string& orderId);
+
+        void reloadWatchlist();
+        void addSymbol(const std::string& symbol);
+        void removeSymbol(const std::string& symbol);
+        std::vector<std::string> getWatchedSymbols() const;
+
+        struct SystemMetrics {
+            double cpuUsage = 0.0;
+            double memoryUsage = 0.0;
+            size_t threadCount = 0;
+            std::chrono::system_clock::time_point lastUpdate;
+            std::map<std::string, double> componentTiming;
+        };
+
+        SystemMetrics getSystemMetrics() const;
+    private:
+        void initializeComponents();
+        void loadConfiguration();
+        void saveConfiguration() const;
+        void loadPlugins();
+        void initializeBrokers();
+
+        void startBackgroundThreads();
+        void stopBackgroundThreads();
+
+        void dataCollectionLoop();
+        void analysisLoop();
+        void riskMonitoringLoop();
+        void systemMonitoringLoop();
+
+        void updateQuotes();
+        void updateOptionChains();
+        void updatePortfolioAnalytics();
+        void runStrategyAnalysis();
+        void performRiskCheck();
+
+        void
+        notifyQuoteUpdate(const std::map<std::string, common::Quote>& quotes);
+        void notifyOpportunityUpdate(
+            const std::vector<strategy::StrategyOpportunity>& opportunities);
+        void notifyStatusUpdate(const std::string& status);
+
+        ApplicationConfig loadDefaultConfig() const;
+        std::vector<std::string>
+        loadWatchlistFromFile(const std::string& filename) const;
+        void saveWatchlistToFile(const std::string& filename) const;
+
+        void optimizePerformance();
+        void setupLogging();
+    };
+
+    class ConfigManager {
+    public:
+        static ApplicationConfig loadFromFile(const std::string& filename);
+        static void saveToFile(const ApplicationConfig& config,
+                               const std::string& filename);
+        static ApplicationConfig loadFromEnvironment();
+    private:
+        static common::BrokerConfig
+        parseBrokerConfig(const std::map<std::string, std::string>& params);
+        static std::map<std::string, std::string> parseEconomicDataConfig(
+            const std::map<std::string, std::string>& params);
+    };
+
+    class PerformanceMonitor {
+    private:
+        std::atomic<double> cpuUsage_{0.0};
+        std::atomic<double> memoryUsage_{0.0};
+        std::map<std::string, std::chrono::high_resolution_clock::time_point>
+            timingPoints_;
+        mutable std::shared_mutex timingLock_;
+    public:
+        void startTiming(const std::string& component);
+        void endTiming(const std::string& component);
+        double getComponentTiming(const std::string& component) const;
+
+        void updateSystemMetrics();
+        double getCpuUsage() const { return cpuUsage_.load(); }
+        double getMemoryUsage() const { return memoryUsage_.load(); }
+    };
+
+} // namespace core
