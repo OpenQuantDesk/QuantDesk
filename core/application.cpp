@@ -1,3 +1,23 @@
+/*
+ * Filename: application.cpp
+ * Developer: Benjamin Cance
+ * Date: 5/31/2025
+ * 
+ * Copyright 2025 Open Quant Desk, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "application.hpp"
 #include "broker/registry.hpp"
 #include <filesystem>
@@ -214,7 +234,8 @@ std::map<std::string, std::string> ConfigManager::parseEconomicDataConfig(const 
     return params;
 }
 
-}initialize() {
+
+void Application::initialize() {
     initialize(config_);
 }
 
@@ -341,7 +362,7 @@ std::vector<std::string> Application::getWatchedSymbols() const {
 }
 
 void Application::initializeComponents() {
-    mathEngine_ = std::make_shared<math::MathEngine>();
+    mathEngine_ = std::make_shared<math::core::MathEngine>();
     
     economicData_ = std::make_shared<data::EconomicDataManager>();
     

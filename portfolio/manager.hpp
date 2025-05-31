@@ -1,8 +1,28 @@
+/*
+ * Filename: manager.hpp
+ * Developer: Benjamin Cance
+ * Date: 5/31/2025
+ * 
+ * Copyright 2025 Open Quant Desk, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #pragma once
 
 #include "common/types.hpp"
-#include "math/engine.hpp"
-#include "math/metrics/probability.hpp"
+#include "OptionsQuantLib/core/engine.hpp"
+#include "OptionsQuantLib/analytics/probability.hpp"
 #include <map>
 #include <vector>
 #include <memory>
@@ -29,7 +49,7 @@ struct EnhancedPosition {
     
     common::Greeks greeks;
     common::ExtendedGreeks extendedGreeks;
-    math::ProbabilityMetrics probMetrics;
+    math::core::ProbabilityMetrics probMetrics;
     
     double theoreticalValue = 0.0;
     double impliedVol = 0.0;
@@ -44,7 +64,7 @@ struct EnhancedPosition {
     std::chrono::system_clock::time_point lastUpdate;
     
     void updateAnalytics(double underlyingPx, double vol, double riskFreeRate,
-                        const math::MathEngine& engine);
+                        const math::core::MathEngine& engine);
     double getDaysToExpiry() const;
     double getNotionalValue() const;
     double getImpliedProbability() const;
@@ -99,7 +119,7 @@ private:
     double cash_ = 0.0;
     double initialCapital_ = 100000.0;
     
-    std::shared_ptr<math::MathEngine> mathEngine_;
+    std::shared_ptr<math::core::MathEngine> mathEngine_;
     
     mutable std::shared_mutex positionsLock_;
     mutable std::shared_mutex metricsLock_;
@@ -115,7 +135,7 @@ private:
     std::atomic<bool> running_{false};
     
 public:
-    explicit PortfolioManager(std::shared_ptr<math::MathEngine> engine);
+    explicit PortfolioManager(std::shared_ptr<math::core::MathEngine> engine);
     ~PortfolioManager();
     
     PortfolioManager(const PortfolioManager&) = delete;

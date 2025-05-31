@@ -1,7 +1,27 @@
+/*
+ * Filename: position.hpp
+ * Developer: Benjamin Cance
+ * Date: 5/31/2025
+ * 
+ * Copyright 2025 Open Quant Desk, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #pragma once
 
 #include "common/greeks.hpp"
-#include "math/metrics/probability.hpp"
+#include "OptionsQuantLib/analytics/probability.hpp"
 #include <string>
 #include <chrono>
 
@@ -22,7 +42,7 @@ private:
     
     common::Greeks greeks_;
     common::ExtendedGreeks extendedGreeks_;
-    math::ProbabilityMetrics probMetrics_;
+    math::core::ProbabilityMetrics probMetrics_;
     
     double theoreticalValue_;
     double impliedVol_;
@@ -53,7 +73,7 @@ public:
     double getUnderlyingPrice() const { return underlyingPrice_; }
     const common::Greeks& getGreeks() const { return greeks_; }
     const common::ExtendedGreeks& getExtendedGreeks() const { return extendedGreeks_; }
-    const math::ProbabilityMetrics& getProbMetrics() const { return probMetrics_; }
+    const math::core::ProbabilityMetrics& getProbMetrics() const { return probMetrics_; }
     double getTheoreticalValue() const { return theoreticalValue_; }
     double getImpliedVol() const { return impliedVol_; }
     double getUnrealizedPnL() const { return unrealizedPnL_; }
@@ -77,10 +97,10 @@ public:
     void setUnderlyingPrice(double underlyingPrice) { underlyingPrice_ = underlyingPrice; }
     void setGreeks(const common::Greeks& greeks) { greeks_ = greeks; }
     void setExtendedGreeks(const common::ExtendedGreeks& extendedGreeks) { extendedGreeks_ = extendedGreeks; }
-    void setProbMetrics(const math::ProbabilityMetrics& probMetrics) { probMetrics_ = probMetrics; }
+    void setProbMetrics(const math::core::ProbabilityMetrics& probMetrics) { probMetrics_ = probMetrics; }
     
     void updateAnalytics(double underlyingPx, double vol, double riskFreeRate,
-                        const class math::MathEngine& engine);
+                        const class math::core::MathEngine& engine);
     
     double getDaysToExpiry() const;
     double getNotionalValue() const;
